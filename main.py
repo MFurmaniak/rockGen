@@ -4,6 +4,7 @@ import numpy as np
 import open3d as o3d
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
+from simpleNoiseGenerator import SimpleNoiseGenerator
 import os
 import platform
 import sys
@@ -199,6 +200,7 @@ class AppWindow:
     MENU_NEW = 4
     MENU_SHOW_SETTINGS = 11
     MENU_ABOUT = 21
+    MENU_SIMPLE_NOISE = 31
 
     DEFAULT_IBL = "default"
 
@@ -215,6 +217,7 @@ class AppWindow:
         self.window = gui.Application.instance.create_window(
             "Open3D", width, height)
         w = self.window  # to make the code more concise
+        self.generator = SimpleNoiseGenerator(self)
 
         # 3D widget
         self._scene = gui.SceneWidget()
@@ -417,91 +420,6 @@ class AppWindow:
         self._settings_panel.add_child(ctrls)
 
         # Rock Settings
-
-        rock_settings = gui.CollapsableVert("Rock Settings", 0.25 * em,
-                                            gui.Margins(em, 0, 0, 0))
-
-        grid = gui.VGrid(2, 0 * em)
-        grid.add_child(gui.Label("Seed"))
-        self._seed_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
-        self._seed_input.set_value(self.settings.seed)
-        self._seed_input.set_on_value_changed(self._on_seed_change)
-        grid.add_child(self._seed_input)
-
-        grid.add_child(gui.Label("Mesh radius"))
-        self._mesh_radius_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
-        self._mesh_radius_input.set_value(self.settings.mesh_radius)
-        self._mesh_radius_input.set_on_value_changed(self._on_mesh_radius_change)
-        grid.add_child(self._mesh_radius_input)
-
-        grid.add_child(gui.Label("Mesh scale"))
-        self._mesh_scale_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
-        self._mesh_scale_input.set_value(self.settings.mesh_scale)
-        self._mesh_scale_input.set_on_value_changed(self._on_mesh_scale_change)
-        grid.add_child(self._mesh_scale_input)
-
-        rock_settings.add_child(grid)
-        grid = gui.VGrid(2, 0 * em)
-
-        grid.add_child(gui.Label("Subdivision iterations"))
-        self._subdivision_iterations_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
-        self._subdivision_iterations_input.set_value(self.settings.number_of_iterations)
-        self._subdivision_iterations_input.set_on_value_changed(self._on_subdivision_iterations_change)
-        grid.add_child(self._subdivision_iterations_input)
-
-        rock_settings.add_child(grid)
-        grid = gui.VGrid(2, 0 * em)
-
-        grid.add_child(gui.Label("Number of cuts"))
-        self._cuts_number_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
-        self._cuts_number_input.set_value(self.settings.cuts_number)
-        self._cuts_number_input.set_on_value_changed(self._on_cuts_number_change)
-        grid.add_child(self._cuts_number_input)
-
-        grid.add_child(gui.Label("Minimal cut"))
-        self._low_cut = gui.Slider(gui.Slider.DOUBLE)
-        self._low_cut.set_limits(0, 1)
-        self._low_cut.double_value = self.settings.low_cut
-        self._low_cut.set_on_value_changed(self._on_low_cut_change)
-        grid.add_child(self._low_cut)
-
-        grid.add_child(gui.Label("Maximum cut"))
-        self._high_cut = gui.Slider(gui.Slider.DOUBLE)
-        self._high_cut.set_limits(0, 1)
-        self._high_cut.double_value = self.settings.high_cut
-        self._high_cut.set_on_value_changed(self._on_high_cut_change)
-        grid.add_child(self._high_cut)
-
-        rock_settings.add_child(grid)
-        grid = gui.VGrid(2, 0 * em)
-
-        grid.add_child(gui.Label("Noise Octaves"))
-        self._noise_octaves_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
-        self._noise_octaves_input.set_value(self.settings.noise_number_of_octaves)
-        self._noise_octaves_input.set_on_value_changed(self._on_noise_octaves_change)
-        grid.add_child(self._noise_octaves_input)
-
-        grid.add_child(gui.Label("Noise strength"))
-        self._noise_str_input = gui.NumberEdit(gui.NumberEdit.Type.DOUBLE)
-        self._noise_str_input.set_value(self.settings.noise_str)
-        self._noise_str_input.set_on_value_changed(self._on_noise_str_change)
-        grid.add_child(self._noise_str_input)
-
-        grid.add_child(gui.Label("Noise offset"))
-        self._noise_offset_input = gui.NumberEdit(gui.NumberEdit.Type.DOUBLE)
-        self._noise_offset_input.set_value(self.settings.noise_offset)
-        self._noise_offset_input.set_on_value_changed(self._on_noise_offset_change)
-        grid.add_child(self._noise_offset_input)
-
-        rock_settings.add_child(grid)
-
-        self._new_button = gui.Button("Generate")
-        self._new_button.set_on_clicked(self._on_menu_new)
-
-        rock_settings.add_child(self._new_button)
-
-        self._settings_panel.add_child(rock_settings)
-
         # ----
 
         # Normally our user interface can be children of all one layout (usually
@@ -514,6 +432,7 @@ class AppWindow:
         w.set_on_layout(self._on_layout)
         w.add_child(self._scene)
         w.add_child(self._settings_panel)
+        w.add_child(self.generator.gui)
 
         # ---- Menu ----
         # The menu is global (because the macOS menu is global), so only create
@@ -537,6 +456,10 @@ class AppWindow:
             settings_menu.set_checked(AppWindow.MENU_SHOW_SETTINGS, True)
             help_menu = gui.Menu()
             help_menu.add_item("About", AppWindow.MENU_ABOUT)
+            # todo add more generators here
+            generator_menu = gui.Menu()
+            generator_menu.add_item("Simple noise", AppWindow.MENU_SIMPLE_NOISE)
+            generator_menu.set_checked(AppWindow.MENU_SIMPLE_NOISE, True)
 
             menu = gui.Menu()
             if isMacOS:
@@ -547,12 +470,14 @@ class AppWindow:
                 menu.add_menu("Example", app_menu)
                 menu.add_menu("File", file_menu)
                 menu.add_menu("Settings", settings_menu)
+                menu.add_menu("Generator", generator_menu)
                 # Don't include help menu unless it has something more than
                 # About...
             else:
                 menu.add_menu("File", file_menu)
                 menu.add_menu("Settings", settings_menu)
                 menu.add_menu("Help", help_menu)
+                menu.add_menu("Generator", generator_menu)
             gui.Application.instance.menubar = menu
 
         # The menubar is global, but we need to connect the menu items to the
@@ -562,10 +487,11 @@ class AppWindow:
         w.set_on_menu_item_activated(AppWindow.MENU_EXPORT,
                                      self._on_menu_export)
         w.set_on_menu_item_activated(AppWindow.MENU_QUIT, self._on_menu_quit)
-        w.set_on_menu_item_activated(AppWindow.MENU_NEW, self._on_menu_new)
         w.set_on_menu_item_activated(AppWindow.MENU_SHOW_SETTINGS,
                                      self._on_menu_toggle_settings_panel)
         w.set_on_menu_item_activated(AppWindow.MENU_ABOUT, self._on_menu_about)
+        w.set_on_menu_item_activated(AppWindow.MENU_SIMPLE_NOISE,
+                                     self._on_menu_toggle_simple_noise_generator_panel)
         # ----
 
         self._apply_settings()
@@ -628,6 +554,8 @@ class AppWindow:
                      self._settings_panel.calc_preferred_size(theme).height)
         self._settings_panel.frame = gui.Rect(r.get_right() - width, r.y, width,
                                               height)
+        self.generator.gui.frame = gui.Rect(0, r.y, 20 * theme.font_size,
+                                            self.generator.gui.calc_preferred_size(theme).height)
 
     def _set_mouse_mode_rotate(self):
         self._scene.set_view_controls(gui.SceneWidget.Controls.ROTATE_CAMERA)
@@ -660,36 +588,6 @@ class AppWindow:
         self.settings.use_ibl = use
         self._profiles.selected_text = Settings.CUSTOM_PROFILE_NAME
         self._apply_settings()
-
-    def _on_seed_change(self, seed):
-        self.settings.seed = int(seed)
-
-    def _on_cuts_number_change(self, number):
-        self.settings.cuts_number = int(number)
-
-    def _on_mesh_radius_change(self, number):
-        self.settings.mesh_radius = int(number)
-
-    def _on_mesh_scale_change(self, number):
-        self.settings.mesh_scale = number
-
-    def _on_subdivision_iterations_change(self, number):
-        self.settings.number_of_iterations = int(number)
-
-    def _on_noise_octaves_change(self, number):
-        self.settings.noise_number_of_octaves = int(number)
-
-    def _on_noise_offset_change(self, number):
-        self.settings.noise_offset = number
-
-    def _on_noise_str_change(self, number):
-        self.settings.noise_str = number
-
-    def _on_low_cut_change(self, number):
-        self.settings.low_cut = number
-
-    def _on_high_cut_change(self, number):
-        self.settings.high_cut = number
 
     def _on_use_sun(self, use):
         self.settings.use_sun = use
@@ -800,13 +698,15 @@ class AppWindow:
     def _on_menu_quit(self):
         gui.Application.instance.quit()
 
-    def _on_menu_new(self):
-        self.simple_noise()
-
     def _on_menu_toggle_settings_panel(self):
         self._settings_panel.visible = not self._settings_panel.visible
         gui.Application.instance.menubar.set_checked(
             AppWindow.MENU_SHOW_SETTINGS, self._settings_panel.visible)
+
+    def _on_menu_toggle_simple_noise_generator_panel(self):
+        self.generator.gui.visible = not self.generator.gui.visible
+        gui.Application.instance.menubar.set_checked(
+            AppWindow.MENU_SIMPLE_NOISE, self.generator.gui.visible)
 
     def _on_menu_about(self):
         # Show a simple dialog. Although the Dialog is actually a widget, you can
@@ -907,41 +807,11 @@ class AppWindow:
 
         self._scene.scene.scene.render_to_image(on_image)
 
-    def points_distance(self, a, b):
-        return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2)
-
-    def simple_noise(self):
+    def display_mesh(self):
         self._scene.scene.clear_geometry()
+        mesh = self.generator.mesh
 
-        print(self.settings.seed)
-        rng = np.random.default_rng(self.settings.seed)
-
-        mesh = o3d.geometry.TriangleMesh.create_octahedron(radius=self.settings.mesh_radius)
-        mesh = mesh.subdivide_loop(number_of_iterations=self.settings.number_of_iterations)
-
-        vertices = np.asarray(mesh.vertices)
-        d = rng.uniform(low=self.settings.low_cut, high=self.settings.high_cut) * self.settings.mesh_radius
-        if self.settings.cuts_number > 0:
-            for i in range(self.settings.cuts_number):
-                rotation = mesh.get_rotation_matrix_from_xyz(
-                    (np.pi / rng.uniform(low=0.5, high=4), 0, np.pi / rng.uniform(low=0.5, high=4)))
-                mesh.rotate(rotation, center=(0, 0, 0))
-                for j in range(vertices.shape[0]):
-                    if vertices[j][1] > d:
-                        vertices[j][1] = d
-
-        for i in range(vertices.shape[0]):
-            noise_value = noise.pnoise3(vertices[i][0], vertices[i][1], vertices[i][2] + self.settings.noise_offset,
-                                        octaves=self.settings.noise_number_of_octaves)
-            vertices[i] *= (1 + noise_value * self.settings.noise_str)
-
-        mesh.scale(self.settings.mesh_scale, center=[0, 0, 0])
-
-        mesh.vertices = o3d.utility.Vector3dVector(vertices)
         mesh.compute_vertex_normals()
-
-        o3d.io.write_triangle_mesh("rock.obj", mesh)
-        # rec_mesh.compute_vertex_normals()
         self._scene.scene.add_geometry("__model__", mesh, self.settings.material)
 
         bounds = mesh.get_axis_aligned_bounding_box()
@@ -956,7 +826,6 @@ class AppWindow:
         threshold = 0.02
         step = 0.1
         size_of_spheroid = 3
-        iterations = 50
 
         print(Modes.CAP)
 
@@ -1009,8 +878,7 @@ class AppWindow:
             bottom = int(top - height * level[0])
             self.set_life(points_life[:, bottom:top, :], level[1])
 
-
-        # main weathering loop
+            # main weathering loop
 
             for number_of_iteration in range(level[2]):
                 points_resistances = np.ones((width, height, depth))
@@ -1490,7 +1358,10 @@ def main():
                                       "Could not open file '" + path + "'")
 
     # w.display_shape()
-    w.spheroid_weather()
+    # gui.Application.instance.post_to_main_thread(w.window, w.add_rock_panel)
+
+    # gui.Application.instance.post_to_main_thread(w.simple_noise)
+
     # Run the event loop. This will not return until the last window is closed.
     gui.Application.instance.run()
 
