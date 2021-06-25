@@ -19,9 +19,9 @@ class SimpleNoiseGenerator(Generator):
     mesh = None
     rock_settings = None
 
-    def __init__(self, AppWindow):
-        self.AppWindow = AppWindow
-        em = AppWindow.window.theme.font_size
+    def __init__(self, app_window):
+        self.AppWindow = app_window
+        em = app_window.window.theme.font_size
         rock_settings = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
         rock_settings.add_child((gui.Label("Simple Noise Generator")))
         grid = gui.VGrid(2, 0 * em)
