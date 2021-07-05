@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import os
+import platform
+import sys
 import glob
 import numpy as np
 import open3d as o3d
@@ -6,11 +9,7 @@ import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 from simpleNoiseGenerator import SimpleNoiseGenerator
 from spheroidWeatheringGenerator import SpheroidWeatheringGenerator
-import os
-import platform
-import sys
-import noise
-from modes import Modes
+from sphereInflationGenerator import SphereInflationGenerator
 
 isMacOS = (platform.system() == "Darwin")
 
@@ -203,6 +202,7 @@ class AppWindow:
     MENU_ABOUT = 21
     MENU_SIMPLE_NOISE = 31
     MENU_SPHEROID_WEATHERING = 32
+    MENU_SPHERE_INFLATION = 33
 
     DEFAULT_IBL = "default"
 
@@ -221,6 +221,7 @@ class AppWindow:
         w = self.window  # to make the code more concise
         self.simple_noise_generator = SimpleNoiseGenerator(self)
         self.spheroid_weathering_generator = SpheroidWeatheringGenerator(self)
+        self.sphere_inf_generator = SphereInflationGenerator(self)
         self.active_generator = self.simple_noise_generator
 
         # 3D widget
@@ -438,6 +439,7 @@ class AppWindow:
         w.add_child(self._settings_panel)
         w.add_child(self.simple_noise_generator.gui)
         w.add_child(self.spheroid_weathering_generator.gui)
+        w.add_child(self.sphere_inf_generator.gui)
 
         # ---- Menu ----
         # The menu is global (because the macOS menu is global), so only create
@@ -468,6 +470,9 @@ class AppWindow:
 
             generator_menu.add_item("Spheroid weathering", AppWindow.MENU_SPHEROID_WEATHERING)
             generator_menu.set_checked(AppWindow.MENU_SPHEROID_WEATHERING, False)
+
+            generator_menu.add_item("Sphere Inflation", AppWindow.MENU_SPHERE_INFLATION)
+            generator_menu.set_checked(AppWindow.MENU_SPHERE_INFLATION, False)
 
             menu = gui.Menu()
             if isMacOS:
@@ -504,6 +509,9 @@ class AppWindow:
 
         w.set_on_menu_item_activated(AppWindow.MENU_SPHEROID_WEATHERING,
                                      self._on_menu_toggle_spheroid_weathering_generator_panel)
+
+        w.set_on_menu_item_activated(AppWindow.MENU_SPHERE_INFLATION,
+                                     self._on_menu_toggle_sphere_inflation_generator_panel)
         # ----
 
         self._apply_settings()
@@ -566,11 +574,16 @@ class AppWindow:
                      self._settings_panel.calc_preferred_size(theme).height)
         self._settings_panel.frame = gui.Rect(r.get_right() - width, r.y, width,
                                               height)
+
         self.simple_noise_generator.gui.frame = gui.Rect(0, r.y, 20 * theme.font_size,
                                                          self.simple_noise_generator.gui.calc_preferred_size(theme).height)
+
         self.spheroid_weathering_generator.gui.frame = gui.Rect(0, r.y, 20 * theme.font_size,
                                                          self.spheroid_weathering_generator.gui.calc_preferred_size(
                                                              theme).height)
+        self.sphere_inf_generator.gui.frame = gui.Rect(0, r.y, 20 * theme.font_size,
+                                                                self.sphere_inf_generator.gui.calc_preferred_size(
+                                                                    theme).height)
 
     def _set_mouse_mode_rotate(self):
         self._scene.set_view_controls(gui.SceneWidget.Controls.ROTATE_CAMERA)
@@ -731,6 +744,13 @@ class AppWindow:
             self.active_generator = self.spheroid_weathering_generator
         gui.Application.instance.menubar.set_checked(
             AppWindow.MENU_SPHEROID_WEATHERING, self.spheroid_weathering_generator.gui.visible)
+
+    def _on_menu_toggle_sphere_inflation_generator_panel(self):
+        self.sphere_inf_generator.gui.visible = not self.sphere_inf_generator.gui.visible
+        if self.sphere_inf_generator.gui.visible:
+            self.active_generator = self.sphere_inf_generator
+        gui.Application.instance.menubar.set_checked(
+            AppWindow.MENU_SPHERE_INFLATION, self.sphere_inf_generator.gui.visible)
 
     def _on_menu_about(self):
         # Show a simple dialog. Although the Dialog is actually a widget, you can

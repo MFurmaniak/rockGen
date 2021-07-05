@@ -122,9 +122,13 @@ class SpheroidWeatheringGenerator(Generator):
         for i in range(len(self.weathering_panels)):
             levels[i] = self.weathering_panels[i].level
 
+        to_remove = []
         for level in levels:
-            if level[0] == 0 or level[2] == 0:
-                levels.remove(level)
+            print(level)
+            if level[0] <= 0.00001 or level[2] <= 0.00001:
+                to_remove.append(level)
+        for level in to_remove:
+            levels.remove(level)
 
         points_life = np.zeros((width, self.height, depth))
         mask = np.asarray(image_mask)
@@ -169,8 +173,11 @@ class SpheroidWeatheringGenerator(Generator):
         # todo parameters for all of the shapes
 
         top = self.height
+        top_float = top
+        print(levels)
         for level in levels:
-            bottom = int(top - self.height * level[0])
+            bottom_float = top_float - self.height * level[0]
+            bottom = int(bottom_float)
             self.set_life(points_life[:, bottom:top, :], level[1])
 
             # main weathering loop
@@ -189,7 +196,9 @@ class SpheroidWeatheringGenerator(Generator):
                                     else:
                                         points_resistances[x, y, z] += resistance
                 points_life[:, bottom:top, :] -= (1 - points_resistances[:, bottom:top, :]) * self.step
-                print(level, " ", number_of_iteration)
+            print(level, " ", number_of_iteration)
+            print(top, bottom)
+            top_float = bottom_float
             top = bottom
 
         # marching cube
@@ -616,8 +625,7 @@ class SpheroidWeatheringGenerator(Generator):
             mu = 1
         return p1 + (p2 - p1) * mu
 
-    def _on_menu_new(self):
-        gui.Application.instance.run_in_thread(self.generate)
+
 
 
 class WeatheringPanel:
@@ -671,7 +679,12 @@ class WeatheringPanel:
             self.next._set_max(self.max - self.level[0])
 
     def _set_max(self, max):
+        if (max < 0):
+            max = 0
         self.max = max
         self._percent.set_limits(0, max)
+        if self.level[0] > self.max:
+            self.level[0] = self.max
+
         if self.next is not None:
             self.next._set_max(self.max - self.level[0])

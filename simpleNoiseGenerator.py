@@ -135,9 +135,6 @@ class SimpleNoiseGenerator(Generator):
     def _on_high_cut_change(self, number):
         self.high_cut = number
 
-    def _on_menu_new(self):
-        gui.Application.instance.run_in_thread(self.generate)
-
     def generate(self):
         rng = np.random.default_rng(self.seed)
 
