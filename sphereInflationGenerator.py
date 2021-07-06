@@ -78,7 +78,7 @@ class SphereInflationGenerator(Generator):
             dampening_factor *= self.dfactor
 
         self.mesh = self.mesh.filter_smooth_laplacian(2)
-        o3d.io.write_triangle_mesh("dupa123.obj", self.mesh)
+        o3d.io.write_triangle_mesh("rock123.obj", self.mesh)
         gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.display_mesh)
 
     def subdivise_middle_of_triangle(self):
