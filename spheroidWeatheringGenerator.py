@@ -21,7 +21,7 @@ class SpheroidWeatheringGenerator(Generator):
         rock_settings.add_child((gui.Label("Spheroid Weathering Generator")))
 
         # todo gui
-        #self._image = gui.ImageWidget()
+        self._image = gui.ImageWidget("C:/Users/Mariusz/Documents/Studia/magisterskie/magisterka/rockGen/rockmask3.png")
         self._image_name = gui.Label(self.filename)
         self._image_open = gui.Button("Open")
         self._image_open.set_on_clicked(self._on_image_open)
@@ -29,7 +29,7 @@ class SpheroidWeatheringGenerator(Generator):
         vert = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
         grid = gui.VGrid(2, 0.5, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
 
-        #grid.add_child(self._image)
+        grid.add_child(self._image)
         grid.add_child(vert)
 
         vert.add_child(self._image_name)
@@ -110,6 +110,9 @@ class SpheroidWeatheringGenerator(Generator):
     def _on_load_dialog_done(self, filename):
         self.AppWindow.window.close_dialog()
         self.filename = filename
+        image = o3d.io.read_image(filename)
+        self._image.update_image(image)
+        self._image_name.text = filename.split('/').pop()
 
     def generate(self):
 
