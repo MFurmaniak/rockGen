@@ -424,6 +424,7 @@ class AppWindow:
         ctrls.add_child(material_settings)
         self._settings_panel.add_child(ctrls)
 
+
         # Rock Settings
         # ----
 
@@ -569,21 +570,23 @@ class AppWindow:
         # the grandchildren.
         r = self.window.content_rect
         self._scene.frame = r
-        width = 17 * theme.font_size
+        font_size = theme.theme.font_size
+        width = 17 * theme.theme.font_size
+
         height = min(r.height,
-                     self._settings_panel.calc_preferred_size(theme).height)
+                     self._settings_panel.calc_preferred_size(theme,gui.Widget.Constraints()).height)
         self._settings_panel.frame = gui.Rect(r.get_right() - width, r.y, width,
                                               height)
 
-        self.simple_noise_generator.gui.frame = gui.Rect(0, r.y, 20 * theme.font_size,
-                                                         self.simple_noise_generator.gui.calc_preferred_size(theme).height)
+        self.simple_noise_generator.gui.frame = gui.Rect(0, r.y, 20 * font_size,
+                                                         self.simple_noise_generator.gui.calc_preferred_size(theme,gui.Widget.Constraints()).height)
 
-        self.spheroid_weathering_generator.gui.frame = gui.Rect(0, r.y, 20 * theme.font_size,
+        self.spheroid_weathering_generator.gui.frame = gui.Rect(0, r.y, 20 * font_size,
                                                          self.spheroid_weathering_generator.gui.calc_preferred_size(
-                                                             theme).height)
-        self.sphere_inf_generator.gui.frame = gui.Rect(0, r.y, 20 * theme.font_size,
+                                                             theme,gui.Widget.Constraints()).height)
+        self.sphere_inf_generator.gui.frame = gui.Rect(0, r.y, 20 * font_size,
                                                                 self.sphere_inf_generator.gui.calc_preferred_size(
-                                                                    theme).height)
+                                                                    theme,gui.Widget.Constraints()).height)
 
     def _set_mouse_mode_rotate(self):
         self._scene.set_view_controls(gui.SceneWidget.Controls.ROTATE_CAMERA)

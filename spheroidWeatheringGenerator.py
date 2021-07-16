@@ -21,7 +21,7 @@ class SpheroidWeatheringGenerator(Generator):
         rock_settings.add_child((gui.Label("Spheroid Weathering Generator")))
 
         # todo gui
-        self._image = gui.ImageLabel("placeholder100x100.png")
+        #self._image = gui.ImageWidget()
         self._image_name = gui.Label(self.filename)
         self._image_open = gui.Button("Open")
         self._image_open.set_on_clicked(self._on_image_open)
@@ -29,7 +29,7 @@ class SpheroidWeatheringGenerator(Generator):
         vert = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
         grid = gui.VGrid(2, 0.5, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
 
-        grid.add_child(self._image)
+        #grid.add_child(self._image)
         grid.add_child(vert)
 
         vert.add_child(self._image_name)
@@ -196,8 +196,7 @@ class SpheroidWeatheringGenerator(Generator):
                                     else:
                                         points_resistances[x, y, z] += resistance
                 points_life[:, bottom:top, :] -= (1 - points_resistances[:, bottom:top, :]) * self.step
-            print(level, " ", number_of_iteration)
-            print(top, bottom)
+                print(level, " ", number_of_iteration)
             top_float = bottom_float
             top = bottom
 
