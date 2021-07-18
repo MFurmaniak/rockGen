@@ -10,18 +10,19 @@ class SpheroidWeatheringGenerator(Generator):
     threshold = 0.02
     step = 0.1
     size_of_spheroid = 3
-    filename = "rockmask6.png"
+    filename = None
     weathering_panels = [None] * 5
 
     def __init__(self, app_window):
 
-        self.AppWindow = app_window
+        super().__init__(app_window)
+
         em = app_window.window.theme.font_size
         rock_settings = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
         rock_settings.add_child((gui.Label("Spheroid Weathering Generator")))
 
         # todo gui
-        self._image = gui.ImageWidget("C:/Users/Mariusz/Documents/Studia/magisterskie/magisterka/rockGen/rockmask3.png")
+        self._image = gui.ImageWidget("empty.png")
         self._image_name = gui.Label(self.filename)
         self._image_open = gui.Button("Open")
         self._image_open.set_on_clicked(self._on_image_open)
@@ -70,6 +71,7 @@ class SpheroidWeatheringGenerator(Generator):
 
         self._new_button = gui.Button("Generate")
         self._new_button.set_on_clicked(self._on_menu_new)
+        self._new_button.enabled = False
 
         for i in range(5):
             self.weathering_panels[i] = WeatheringPanel(em)
@@ -104,6 +106,7 @@ class SpheroidWeatheringGenerator(Generator):
         dlg.set_on_done(self._on_load_dialog_done)
         self.AppWindow.window.show_dialog(dlg)
 
+
     def _on_file_dialog_cancel(self):
         self.AppWindow.window.close_dialog()
 
@@ -113,8 +116,20 @@ class SpheroidWeatheringGenerator(Generator):
         image = o3d.io.read_image(filename)
         self._image.update_image(image)
         self._image_name.text = filename.split('/').pop()
+        self._new_button.enabled = True
+
+    def set_operation_number(self):
+        self.max_operations_number = 0
+        for i in self.weathering_panels:
+            self.max_operations_number += i.level[2]
+
+        self.max_operations_number += self.height + 5
+        print(self.max_operations_number)
 
     def generate(self):
+
+        self._new_button.enabled = False
+        self.reset_operations_counter()
 
         image_mask = o3d.io.read_image(self.filename)
         width = np.asarray(image_mask).shape[0]
@@ -125,6 +140,8 @@ class SpheroidWeatheringGenerator(Generator):
         for i in range(len(self.weathering_panels)):
             levels[i] = self.weathering_panels[i].level
 
+        self.increment_and_display_operations()
+
         to_remove = []
         for level in levels:
             print(level)
@@ -132,6 +149,8 @@ class SpheroidWeatheringGenerator(Generator):
                 to_remove.append(level)
         for level in to_remove:
             levels.remove(level)
+
+        self.increment_and_display_operations()
 
         points_life = np.zeros((width, self.height, depth))
         mask = np.asarray(image_mask)
@@ -162,6 +181,8 @@ class SpheroidWeatheringGenerator(Generator):
                 z += 1
             x += 1
 
+        self.increment_and_display_operations()
+
         resistance_template = []
         for i in range(-self.size_of_spheroid - 1, self.size_of_spheroid + 1):
             for j in range(-self.size_of_spheroid - 1, self.size_of_spheroid + 1):
@@ -169,6 +190,8 @@ class SpheroidWeatheringGenerator(Generator):
                     if 0 < np.abs(i) + np.abs(j) + np.abs(k) <= self.size_of_spheroid:
                         resistance_template += [[i, j, k]]
         resistance = -0.8 / (len(resistance_template))
+
+        self.increment_and_display_operations()
 
         # resistance_template = [(1, 0, 0, -0.16), (-1, 0, 0, -0.16), (0, 0, 1, -0.16),
         #                        (0, 0, -1, -0.16), (0, -1, 0, -0.16), (0, 1, 0, -0.16), ]
@@ -198,6 +221,7 @@ class SpheroidWeatheringGenerator(Generator):
                                             points_resistances[x, y, z] += resistance
                                     else:
                                         points_resistances[x, y, z] += resistance
+                self.increment_and_display_operations()
                 points_life[:, bottom:top, :] -= (1 - points_resistances[:, bottom:top, :]) * self.step
                 print(level, " ", number_of_iteration)
             top_float = bottom_float
@@ -206,12 +230,15 @@ class SpheroidWeatheringGenerator(Generator):
         # marching cube
 
         mesh = self.marching_cube(points_life, self.threshold)
+        self.increment_and_display_operations()
 
         mesh.compute_vertex_normals()
         mesh = mesh.filter_smooth_laplacian(1)
+        self.increment_and_display_operations()
         o3d.io.write_triangle_mesh("rock.obj", mesh)
         self.mesh = mesh
         gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.display_mesh)
+        self._new_button.enabled = True
 
     def set_life(self, points_life, mode):
 
@@ -603,6 +630,7 @@ class SpheroidWeatheringGenerator(Generator):
                             counter += 1
                         else:
                             break
+                self.increment_and_display_operations()
         mesh = o3d.geometry.TriangleMesh()
         list_of_points = vertices_list[:number_of_vertices] - (0.5 * width + 2, 0.5 * height + 2, 0.5 * depth + 2)
         list_of_triangles = triangle_list[:number_of_triangles]

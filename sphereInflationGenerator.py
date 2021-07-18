@@ -12,7 +12,7 @@ class SphereInflationGenerator(Generator):
     max_displacement = 0
 
     def __init__(self, app_window):
-        self.AppWindow = app_window
+        super().__init__(app_window)
         em = app_window.window.theme.font_size
         rock_settings = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
 
@@ -66,20 +66,40 @@ class SphereInflationGenerator(Generator):
     def _on_max_def_value_change(self,number):
         self.max_displacement = int(number)
 
-    def generate(self):
-        self.mesh = o3d.geometry.TriangleMesh.create_icosahedron()
+    def set_operation_number(self):
+        self.max_operations_number = 2 * self.iterations + 3
 
+    def generate(self):
+        self._new_button.enabled = False
+        self.reset_operations_counter()
+        print("Create base mesh")
+        self.mesh = o3d.geometry.TriangleMesh.create_icosahedron()
+        self.increment_and_display_operations()
+
+        print("Randomize base mesh")
         self.randomize_mesh()
+        self.increment_and_display_operations()
+
         dampening_factor = self.dfactor
 
         for i in range(self.iterations):
+            print("Subdivision ", i + 1, "/" , self.iterations)
             min_max = self.subdivise_middle_of_triangle()
+            self.increment_and_display_operations()
+
+            print("Displacment ",i + 1, "/" , self.iterations)
             self.displace_vertices(min_max, dampening_factor)
+            self.increment_and_display_operations()
+
             dampening_factor *= self.dfactor
 
+        print("Smoothing")
         self.mesh = self.mesh.filter_smooth_laplacian(2)
+        self.increment_and_display_operations()
+
         o3d.io.write_triangle_mesh("rock123.obj", self.mesh)
         gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.display_mesh)
+        self._new_button.enabled = True
 
     def subdivise_middle_of_triangle(self):
         vertices = np.asarray(self.mesh.vertices)

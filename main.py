@@ -223,6 +223,8 @@ class AppWindow:
         self.spheroid_weathering_generator = SpheroidWeatheringGenerator(self)
         self.sphere_inf_generator = SphereInflationGenerator(self)
         self.active_generator = self.simple_noise_generator
+        self._progress_bar = gui.ProgressBar()
+
 
         # 3D widget
         self._scene = gui.SceneWidget()
@@ -441,6 +443,7 @@ class AppWindow:
         w.add_child(self.simple_noise_generator.gui)
         w.add_child(self.spheroid_weathering_generator.gui)
         w.add_child(self.sphere_inf_generator.gui)
+        w.add_child(self._progress_bar)
 
         # ---- Menu ----
         # The menu is global (because the macOS menu is global), so only create
@@ -587,6 +590,7 @@ class AppWindow:
         self.sphere_inf_generator.gui.frame = gui.Rect(0, r.y, 20 * font_size,
                                                                 self.sphere_inf_generator.gui.calc_preferred_size(
                                                                     theme,gui.Widget.Constraints()).height)
+        self._progress_bar.frame = gui.Rect(0, r.height + 5, r.width, 15)
 
     def _set_mouse_mode_rotate(self):
         self._scene.set_view_controls(gui.SceneWidget.Controls.ROTATE_CAMERA)
@@ -863,6 +867,9 @@ class AppWindow:
 
         bounds = mesh.get_axis_aligned_bounding_box()
         self._scene.setup_camera(60, bounds, bounds.get_center())
+
+    def update_progress_bar(self):
+        self._progress_bar.value = self.active_generator.completion_percent
 
 
 def main():

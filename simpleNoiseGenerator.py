@@ -20,7 +20,7 @@ class SimpleNoiseGenerator(Generator):
     rock_settings = None
 
     def __init__(self, app_window):
-        self.AppWindow = app_window
+        super().__init__(app_window)
         em = app_window.window.theme.font_size
         rock_settings = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
         rock_settings.add_child((gui.Label("Simple Noise Generator")))
@@ -135,11 +135,21 @@ class SimpleNoiseGenerator(Generator):
     def _on_high_cut_change(self, number):
         self.high_cut = number
 
+    def set_operation_number(self):
+        self.max_operations_number = 5
+
     def generate(self):
+        self._new_button.enabled = False
+        self.reset_operations_counter()
+
+
         rng = np.random.default_rng(self.seed)
 
         mesh = o3d.geometry.TriangleMesh.create_octahedron(radius=self.mesh_radius)
+        self.increment_and_display_operations()
+
         mesh = mesh.subdivide_loop(number_of_iterations=self.number_of_iterations)
+        self.increment_and_display_operations()
 
         vertices = np.asarray(mesh.vertices)
         d = rng.uniform(low=self.low_cut, high=self.high_cut) * self.mesh_radius
@@ -151,17 +161,23 @@ class SimpleNoiseGenerator(Generator):
                 for j in range(vertices.shape[0]):
                     if vertices[j][1] > d:
                         vertices[j][1] = d
+        self.increment_and_display_operations()
 
         for i in range(vertices.shape[0]):
             noise_value = noise.pnoise3(vertices[i][0], vertices[i][1], vertices[i][2] + self.noise_offset,
                                         octaves=self.noise_number_of_octaves)
             vertices[i] *= (1 + noise_value * self.noise_str)
+        self.increment_and_display_operations()
 
         mesh.scale(self.mesh_scale, center=[0, 0, 0])
+        self.increment_and_display_operations()
 
         mesh.vertices = o3d.utility.Vector3dVector(vertices)
+
         mesh.compute_vertex_normals()
 
         o3d.io.write_triangle_mesh("rock.obj", mesh)
         self.mesh = mesh
+
         gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.display_mesh)
+        self._new_button.enabled = True
