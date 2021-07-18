@@ -740,6 +740,14 @@ class AppWindow:
 
     def _on_menu_toggle_simple_noise_generator_panel(self):
         self.simple_noise_generator.gui.visible = not self.simple_noise_generator.gui.visible
+        self.spheroid_weathering_generator.gui.visible = False
+        gui.Application.instance.menubar.set_checked(
+            AppWindow.MENU_SPHEROID_WEATHERING, self.spheroid_weathering_generator.gui.visible)
+
+        self.sphere_inf_generator.gui.visible = False
+        gui.Application.instance.menubar.set_checked(
+            AppWindow.MENU_SPHERE_INFLATION, self.sphere_inf_generator.gui.visible)
+
         if self.simple_noise_generator.gui.visible:
             self.active_generator = self.simple_noise_generator
         gui.Application.instance.menubar.set_checked(
@@ -747,6 +755,14 @@ class AppWindow:
 
     def _on_menu_toggle_spheroid_weathering_generator_panel(self):
         self.spheroid_weathering_generator.gui.visible = not self.spheroid_weathering_generator.gui.visible
+        self.simple_noise_generator.gui.visible = False
+        gui.Application.instance.menubar.set_checked(
+            AppWindow.MENU_SIMPLE_NOISE, self.simple_noise_generator.gui.visible)
+
+        self.sphere_inf_generator.gui.visible = False
+        gui.Application.instance.menubar.set_checked(
+            AppWindow.MENU_SPHERE_INFLATION, self.sphere_inf_generator.gui.visible)
+
         if self.spheroid_weathering_generator.gui.visible:
             self.active_generator = self.spheroid_weathering_generator
         gui.Application.instance.menubar.set_checked(
@@ -754,6 +770,14 @@ class AppWindow:
 
     def _on_menu_toggle_sphere_inflation_generator_panel(self):
         self.sphere_inf_generator.gui.visible = not self.sphere_inf_generator.gui.visible
+        self.simple_noise_generator.gui.visible = False
+        gui.Application.instance.menubar.set_checked(
+            AppWindow.MENU_SIMPLE_NOISE, self.simple_noise_generator.gui.visible)
+
+        self.spheroid_weathering_generator.gui.visible = False
+        gui.Application.instance.menubar.set_checked(
+            AppWindow.MENU_SPHEROID_WEATHERING, self.spheroid_weathering_generator.gui.visible)
+
         if self.sphere_inf_generator.gui.visible:
             self.active_generator = self.sphere_inf_generator
         gui.Application.instance.menubar.set_checked(

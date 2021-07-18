@@ -47,8 +47,6 @@ class SphereInflationGenerator(Generator):
 
         rock_settings.add_child(grid)
 
-        self._new_button = gui.Button("Generate")
-        self._new_button.set_on_clicked(self._on_menu_new)
         rock_settings.add_child(self._new_button)
 
         self.gui = rock_settings
@@ -70,8 +68,7 @@ class SphereInflationGenerator(Generator):
         self.max_operations_number = 2 * self.iterations + 3
 
     def generate(self):
-        self._new_button.enabled = False
-        self.reset_operations_counter()
+
         print("Create base mesh")
         self.mesh = o3d.geometry.TriangleMesh.create_icosahedron()
         self.increment_and_display_operations()
@@ -98,8 +95,6 @@ class SphereInflationGenerator(Generator):
         self.increment_and_display_operations()
 
         o3d.io.write_triangle_mesh("rock123.obj", self.mesh)
-        gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.display_mesh)
-        self._new_button.enabled = True
 
     def subdivise_middle_of_triangle(self):
         vertices = np.asarray(self.mesh.vertices)

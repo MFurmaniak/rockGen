@@ -28,10 +28,20 @@ class Generator(ABC):
 
     def __init__(self, app_window):
         self.AppWindow = app_window
+        self._new_button = gui.Button("Generate")
+        self._new_button.set_on_clicked(self._on_generate_button)
 
-    def _on_menu_new(self):
-        gui.Application.instance.run_in_thread(self.generate)
+    def _on_generate_button(self):
+
+        gui.Application.instance.run_in_thread(self.prepare_and_generate)
         #self.generate()
+
+    def prepare_and_generate(self):
+        self._new_button.enabled = False
+        self.reset_operations_counter()
+        self.generate()
+        self._new_button.enabled = True
+        gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.display_mesh)
 
     def update_progress_bar(self, percent):
         self.completion_percent = percent

@@ -69,8 +69,6 @@ class SpheroidWeatheringGenerator(Generator):
 
         rock_settings.add_child(grid)
 
-        self._new_button = gui.Button("Generate")
-        self._new_button.set_on_clicked(self._on_menu_new)
         self._new_button.enabled = False
 
         for i in range(5):
@@ -127,9 +125,6 @@ class SpheroidWeatheringGenerator(Generator):
         print(self.max_operations_number)
 
     def generate(self):
-
-        self._new_button.enabled = False
-        self.reset_operations_counter()
 
         image_mask = o3d.io.read_image(self.filename)
         width = np.asarray(image_mask).shape[0]
@@ -237,8 +232,7 @@ class SpheroidWeatheringGenerator(Generator):
         self.increment_and_display_operations()
         o3d.io.write_triangle_mesh("rock.obj", mesh)
         self.mesh = mesh
-        gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.display_mesh)
-        self._new_button.enabled = True
+
 
     def set_life(self, points_life, mode):
 

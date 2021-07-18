@@ -98,9 +98,6 @@ class SimpleNoiseGenerator(Generator):
 
         rock_settings.add_child(grid)
 
-        self._new_button = gui.Button("Generate")
-        self._new_button.set_on_clicked(self._on_menu_new)
-
         rock_settings.add_child(self._new_button)
 
         self.gui = rock_settings
@@ -139,9 +136,6 @@ class SimpleNoiseGenerator(Generator):
         self.max_operations_number = 5
 
     def generate(self):
-        self._new_button.enabled = False
-        self.reset_operations_counter()
-
 
         rng = np.random.default_rng(self.seed)
 
@@ -178,6 +172,3 @@ class SimpleNoiseGenerator(Generator):
 
         o3d.io.write_triangle_mesh("rock.obj", mesh)
         self.mesh = mesh
-
-        gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.display_mesh)
-        self._new_button.enabled = True
