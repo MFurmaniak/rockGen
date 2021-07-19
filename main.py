@@ -165,18 +165,6 @@ class Settings:
         # to another one, then come back, the old setting will still be there.
         self.material = self._materials[Settings.LIT]
 
-        # Rock Settings
-        self.seed = 0
-        self.mesh_radius = 1
-        self.mesh_scale = 10
-        self.cuts_number = 20
-        self.number_of_iterations = 3
-        self.low_cut = 0.6
-        self.high_cut = 0.7
-        self.noise_number_of_octaves = 8
-        self.noise_str = 2
-        self.noise_offset = 1
-
     def set_material(self, name):
         self.material = self._materials[name]
         self.apply_material = True
@@ -224,6 +212,12 @@ class AppWindow:
         self.sphere_inf_generator = SphereInflationGenerator(self)
         self.active_generator = self.simple_noise_generator
         self._progress_bar = gui.ProgressBar()
+        self.mesh = None
+        self.export_filename = ""
+        self.button_ready = False
+        self.unit = 0
+        self.orientation = 0
+
 
 
         # 3D widget
@@ -457,7 +451,7 @@ class AppWindow:
             file_menu = gui.Menu()
             file_menu.add_item("Open...", AppWindow.MENU_OPEN)
             file_menu.add_item("New", AppWindow.MENU_NEW)
-            file_menu.add_item("Export Current Image...", AppWindow.MENU_EXPORT)
+            file_menu.add_item("Export Current Mesh...", AppWindow.MENU_EXPORT)
             if not isMacOS:
                 file_menu.add_separator()
                 file_menu.add_item("Quit", AppWindow.MENU_QUIT)
@@ -717,18 +711,44 @@ class AppWindow:
         self.window.close_dialog()
         self.load(filename)
 
-    def _on_menu_export(self):
+    def _on_export_dialog(self):
         dlg = gui.FileDialog(gui.FileDialog.SAVE, "Choose file to save",
                              self.window.theme)
-        dlg.add_filter(".png", "PNG files (.png)")
-        dlg.set_on_cancel(self._on_file_dialog_cancel)
-        dlg.set_on_done(self._on_export_dialog_done)
+        dlg.add_filter(".obj", "OBJ file (.obj)")
+        dlg.set_on_cancel(self._on_export_dialog_filename_close)
+        dlg.set_on_done(self._on_export_dialog_filename_done)
         self.window.show_dialog(dlg)
 
-    def _on_export_dialog_done(self, filename):
+    def _on_export_dialog_filename_done(self, filename):
+        self.export_filename = filename
+        self._on_menu_export()
+
+    def _on_export_dialog_filename_close(self):
+        self._on_menu_export()
+
+    def _on_save(self):
+        saved_mesh = o3d.geometry.TriangleMesh(self.mesh)
+        if self.unit == 1:
+            saved_mesh.scale(100, center=[0, 0, 0])
+
+        if self.orientation == 1:
+            rotation = saved_mesh.get_rotation_matrix_from_xyz((np.pi, 0, 0))
+            saved_mesh.rotate(rotation, center=(0, 0, 0))
+        if self.orientation == 2:
+            rotation = saved_mesh.get_rotation_matrix_from_xyz((0, np.pi*3/2, 0))
+            saved_mesh.rotate(rotation, center=(0, 0, 0))
+        if self.orientation == 3:
+            rotation = saved_mesh.get_rotation_matrix_from_xyz((0, np.pi/2, 0))
+            saved_mesh.rotate(rotation, center=(0, 0, 0))
+        if self.orientation == 4:
+            rotation = saved_mesh.get_rotation_matrix_from_xyz((np.pi/2, 0, 0))
+            saved_mesh.rotate(rotation, center=(0, 0, 0))
+        if self.orientation == 5:
+            rotation = saved_mesh.get_rotation_matrix_from_xyz((np.pi*3/2, 0, 0))
+            saved_mesh.rotate(rotation, center=(0, 0, 0))
+
+        o3d.io.write_triangle_mesh(self.export_filename, saved_mesh)
         self.window.close_dialog()
-        frame = self._scene.frame
-        self.export_image(filename, frame.width, frame.height)
 
     def _on_menu_quit(self):
         gui.Application.instance.quit()
@@ -812,8 +832,94 @@ class AppWindow:
         dlg.add_child(dlg_layout)
         self.window.show_dialog(dlg)
 
+    def _on_menu_export(self):
+
+        self._check_button()
+
+        em = self.window.theme.font_size
+        dlg = gui.Dialog("Export mesh")
+
+        dlg_layout = gui.Vert(em, gui.Margins(em, em, em, em))
+        horiz = gui.Horiz()
+        horiz.add_child(gui.Label("Filename"))
+        horiz.add_stretch()
+        dlg_layout.add_child(horiz)
+
+        horiz = gui.Horiz()
+        horiz.add_child(gui.Label(self.export_filename))
+        filename_but = gui.Button("Open File")
+        filename_but.set_on_clicked(self._on_export_dialog)
+        horiz.add_child(filename_but)
+
+        dlg_layout.add_child(horiz)
+
+        horiz = gui.Horiz(em)
+        horiz.add_stretch()
+
+        vert = gui.Vert(em)
+        vert.add_child(gui.Label("Orientation"))
+
+        orient_combo = gui.Combobox()
+        orient_combo.add_item("+Y up")
+        orient_combo.add_item("-Y up")
+        orient_combo.add_item("+X up")
+        orient_combo.add_item("-X up")
+        orient_combo.add_item("+Z up")
+        orient_combo.add_item("-Z up")
+        orient_combo.set_on_selection_changed(self._on_orientation_changed)
+        orient_combo.selected_index = self.orientation
+
+        vert.add_child(orient_combo)
+
+        horiz.add_child(vert)
+        horiz.add_stretch()
+
+        vert = gui.Vert(em)
+        vert.add_child(gui.Label("Unit"))
+        unit_combo = gui.Combobox()
+        unit_combo.add_item("Meter")
+        unit_combo.add_item("Centimeter")
+        unit_combo.selected_index = self.unit
+        unit_combo.set_on_selection_changed(self._on_unit_changed)
+
+        vert.add_child(unit_combo)
+
+        horiz.add_child(vert)
+        horiz.add_stretch()
+
+
+        dlg_layout.add_child(horiz)
+
+        save = gui.Button("Save")
+        save.set_on_clicked(self._on_save)
+        close = gui.Button("Close")
+        close.set_on_clicked(self._on_file_dialog_cancel)
+        h = gui.Horiz()
+        h.add_stretch()
+        h.add_child(save)
+        h.add_child(close)
+
+        save.enabled = self.button_ready
+
+        dlg_layout.add_child(h)
+
+        dlg.add_child(dlg_layout)
+        self.window.show_dialog(dlg)
+
     def _on_about_ok(self):
         self.window.close_dialog()
+
+    def _on_unit_changed(self, text, index):
+        self.unit = index
+
+    def _on_orientation_changed(self, text, index):
+        self.orientation = index
+
+    def _check_button(self):
+        if self.mesh is None or self.export_filename == "":
+            self.button_ready = False
+        else:
+            self.button_ready = True
 
     def load(self, path):
         self._scene.scene.clear_geometry()
@@ -884,12 +990,12 @@ class AppWindow:
 
     def display_mesh(self):
         self._scene.scene.clear_geometry()
-        mesh = self.active_generator.mesh
+        self.mesh = self.active_generator.mesh
 
-        mesh.compute_vertex_normals()
-        self._scene.scene.add_geometry("__model__", mesh, self.settings.material)
+        self.mesh.compute_vertex_normals()
+        self._scene.scene.add_geometry("__model__", self.mesh, self.settings.material)
 
-        bounds = mesh.get_axis_aligned_bounding_box()
+        bounds = self.mesh.get_axis_aligned_bounding_box()
         self._scene.setup_camera(60, bounds, bounds.get_center())
 
     def update_progress_bar(self):
