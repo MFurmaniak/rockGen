@@ -32,9 +32,7 @@ class Generator(ABC):
         self._new_button.set_on_clicked(self._on_generate_button)
 
     def _on_generate_button(self):
-
         gui.Application.instance.run_in_thread(self.prepare_and_generate)
-        #self.generate()
 
     def prepare_and_generate(self):
         self._new_button.enabled = False
@@ -47,5 +45,3 @@ class Generator(ABC):
         self.completion_percent = percent
         gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.update_progress_bar)
         pass
-
-

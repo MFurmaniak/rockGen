@@ -4,6 +4,7 @@ import numpy as np
 import open3d as o3d
 import noise
 
+
 class SimpleNoiseGenerator(Generator):
     # Rock Settings
     seed = 0
@@ -170,5 +171,4 @@ class SimpleNoiseGenerator(Generator):
 
         mesh.compute_vertex_normals()
 
-        o3d.io.write_triangle_mesh("rock.obj", mesh)
         self.mesh = mesh

@@ -75,7 +75,7 @@ class SpheroidWeatheringGenerator(Generator):
             self.weathering_panels[i] = WeatheringPanel(em)
             rock_settings.add_child(self.weathering_panels[i].gui)
         for i in range(4):
-            self.weathering_panels[i].next = self.weathering_panels[i+1]
+            self.weathering_panels[i].next = self.weathering_panels[i + 1]
 
         rock_settings.add_child(self._new_button)
 
@@ -103,7 +103,6 @@ class SpheroidWeatheringGenerator(Generator):
         dlg.set_on_cancel(self._on_file_dialog_cancel)
         dlg.set_on_done(self._on_load_dialog_done)
         self.AppWindow.window.show_dialog(dlg)
-
 
     def _on_file_dialog_cancel(self):
         self.AppWindow.window.close_dialog()
@@ -230,9 +229,7 @@ class SpheroidWeatheringGenerator(Generator):
         mesh.compute_vertex_normals()
         mesh = mesh.filter_smooth_laplacian(1)
         self.increment_and_display_operations()
-        o3d.io.write_triangle_mesh("rock.obj", mesh)
         self.mesh = mesh
-
 
     def set_life(self, points_life, mode):
 
@@ -648,8 +645,6 @@ class SpheroidWeatheringGenerator(Generator):
         if mu > 1:
             mu = 1
         return p1 + (p2 - p1) * mu
-
-
 
 
 class WeatheringPanel:
