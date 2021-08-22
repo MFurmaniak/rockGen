@@ -11,11 +11,11 @@ class SimpleNoiseGenerator(Generator):
     mesh_radius = 1
     mesh_scale = 10
     cuts_number = 20
-    number_of_iterations = 3
+    number_of_iterations = 1
     low_cut = 0.6
     high_cut = 0.7
     noise_number_of_octaves = 8
-    noise_str = 2
+    noise_str = 1
     noise_offset = 1
     mesh = None
     rock_settings = None
@@ -134,13 +134,13 @@ class SimpleNoiseGenerator(Generator):
         self.high_cut = number
 
     def set_operation_number(self):
-        self.max_operations_number = 5
+        self.max_operations_number = 6
 
     def generate(self):
 
         rng = np.random.default_rng(self.seed)
 
-        mesh = o3d.geometry.TriangleMesh.create_octahedron(radius=self.mesh_radius)
+        mesh = o3d.geometry.TriangleMesh.create_sphere(radius=self.mesh_radius, resolution=6)
         self.increment_and_display_operations()
 
         mesh = mesh.subdivide_loop(number_of_iterations=self.number_of_iterations)
@@ -156,6 +156,14 @@ class SimpleNoiseGenerator(Generator):
                 for j in range(vertices.shape[0]):
                     if vertices[j][1] > d:
                         vertices[j][1] = d
+        mesh.vertices = o3d.utility.Vector3dVector(vertices)
+
+        self.increment_and_display_operations()
+
+        mesh.translate((np.amin(vertices, axis=0) + np.amax(vertices, axis=0)) / 2)
+
+        vertices = np.asarray(mesh.vertices)
+
         self.increment_and_display_operations()
 
         for i in range(vertices.shape[0]):
@@ -163,11 +171,10 @@ class SimpleNoiseGenerator(Generator):
                                         octaves=self.noise_number_of_octaves)
             vertices[i] *= (1 + noise_value * self.noise_str)
         self.increment_and_display_operations()
+        mesh.vertices = o3d.utility.Vector3dVector(vertices)
 
         mesh.scale(self.mesh_scale, center=[0, 0, 0])
         self.increment_and_display_operations()
-
-        mesh.vertices = o3d.utility.Vector3dVector(vertices)
 
         mesh.compute_vertex_normals()
 
