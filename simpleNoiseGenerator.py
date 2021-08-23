@@ -147,9 +147,9 @@ class SimpleNoiseGenerator(Generator):
         self.increment_and_display_operations()
 
         vertices = np.asarray(mesh.vertices)
-        d = rng.uniform(low=self.low_cut, high=self.high_cut) * self.mesh_radius
         if self.cuts_number > 0:
             for i in range(self.cuts_number):
+                d = rng.uniform(low=self.low_cut, high=self.high_cut) * self.mesh_radius
                 rotation = mesh.get_rotation_matrix_from_xyz(
                     (np.pi / rng.uniform(low=0.5, high=4), 0, np.pi / rng.uniform(low=0.5, high=4)))
                 mesh.rotate(rotation, center=(0, 0, 0))
