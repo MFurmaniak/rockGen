@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
 import open3d.visualization.gui as gui
+import open3d as o3d
+import numpy as np
 
 
 class Generator(ABC):
     gui = None
     mesh = None
+    _mesh_choice = None
     completion_percent = 0
     operations_number = 0
     max_operations_number = 0
@@ -45,3 +48,35 @@ class Generator(ABC):
         self.completion_percent = percent
         gui.Application.instance.post_to_main_thread(self.AppWindow.window, self.AppWindow.update_progress_bar)
         pass
+
+
+    def create_mesh_choice(self):
+        self._mesh_choice = gui.Combobox()
+        self._mesh_choice.add_item("Tetrahedron")
+        self._mesh_choice.add_item("Octahedron")
+        self._mesh_choice.add_item("Icosahedron")
+        self._mesh_choice.add_item("Cube")
+        self._mesh_choice.add_item("Box")
+        self._mesh_choice.add_item("Sphere")
+
+    def create_base_mesh(self):
+        index = self._mesh_choice.selected_index
+        if index == 0:
+            self.mesh = o3d.geometry.TriangleMesh.create_tetrahedron()
+        elif index == 1:
+            self.mesh = o3d.geometry.TriangleMesh.create_octahedron()
+        elif index == 2:
+            self.mesh = o3d.geometry.TriangleMesh.create_icosahedron()
+        elif index == 3:
+            self.mesh = o3d.geometry.TriangleMesh.create_box()
+            self.center_mesh(self.mesh)
+        elif index == 4:
+            self.mesh = o3d.geometry.TriangleMesh.create_box(width=2)
+            self.center_mesh(self.mesh)
+        elif index == 5:
+            self.mesh = o3d.geometry.TriangleMesh.create_sphere(resolution=6)
+
+    def center_mesh(self, mesh):
+        vertices = np.asarray(mesh.vertices)
+        mesh.translate(-(np.amin(vertices, axis=0) + np.amax(vertices, axis=0)) / 2)
+

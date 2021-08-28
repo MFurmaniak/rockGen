@@ -22,10 +22,13 @@ class SimpleNoiseGenerator(Generator):
 
     def __init__(self, app_window):
         super().__init__(app_window)
+        self.create_mesh_choice()
         em = app_window.window.theme.font_size
         rock_settings = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
         rock_settings.add_child((gui.Label("Simple Noise Generator")))
         grid = gui.VGrid(2, 0 * em)
+        grid.add_child(gui.Label("Base shape"))
+        grid.add_child(self._mesh_choice)
         grid.add_child(gui.Label("Seed"))
         self._seed_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
         self._seed_input.set_value(self.seed)
@@ -140,29 +143,29 @@ class SimpleNoiseGenerator(Generator):
 
         rng = np.random.default_rng(self.seed)
 
-        mesh = o3d.geometry.TriangleMesh.create_sphere(radius=self.mesh_radius, resolution=6)
+        self.create_base_mesh()
         self.increment_and_display_operations()
 
-        mesh = mesh.subdivide_loop(number_of_iterations=self.number_of_iterations)
+        self.mesh = self.mesh.subdivide_loop(number_of_iterations=self.number_of_iterations)
         self.increment_and_display_operations()
 
-        vertices = np.asarray(mesh.vertices)
+        vertices = np.asarray(self.mesh.vertices)
         if self.cuts_number > 0:
             for i in range(self.cuts_number):
                 d = rng.uniform(low=self.low_cut, high=self.high_cut) * self.mesh_radius
-                rotation = mesh.get_rotation_matrix_from_xyz(
+                rotation = self.mesh.get_rotation_matrix_from_xyz(
                     (np.pi / rng.uniform(low=0.5, high=4), 0, np.pi / rng.uniform(low=0.5, high=4)))
-                mesh.rotate(rotation, center=(0, 0, 0))
+                self.mesh.rotate(rotation, center=(0, 0, 0))
                 for j in range(vertices.shape[0]):
                     if vertices[j][1] > d:
                         vertices[j][1] = d
-        mesh.vertices = o3d.utility.Vector3dVector(vertices)
+        self.mesh.vertices = o3d.utility.Vector3dVector(vertices)
 
         self.increment_and_display_operations()
 
-        mesh.translate((np.amin(vertices, axis=0) + np.amax(vertices, axis=0)) / 2)
+        self.center_mesh(self.mesh)
 
-        vertices = np.asarray(mesh.vertices)
+        vertices = np.asarray(self.mesh.vertices)
 
         self.increment_and_display_operations()
 
@@ -171,11 +174,9 @@ class SimpleNoiseGenerator(Generator):
                                         octaves=self.noise_number_of_octaves)
             vertices[i] *= (1 + noise_value * self.noise_str)
         self.increment_and_display_operations()
-        mesh.vertices = o3d.utility.Vector3dVector(vertices)
+        self.mesh.vertices = o3d.utility.Vector3dVector(vertices)
 
-        mesh.scale(self.mesh_scale, center=[0, 0, 0])
+        self.mesh.scale(self.mesh_scale, center=[0, 0, 0])
         self.increment_and_display_operations()
 
-        mesh.compute_vertex_normals()
-
-        self.mesh = mesh
+        self.mesh.compute_vertex_normals()

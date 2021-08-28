@@ -5,28 +5,41 @@ import open3d.visualization.gui as gui
 
 
 class SphereInflationGenerator(Generator):
-    dfactor = 0
-    iterations = 0
-    min_displacement = 0
-    max_displacement = 0
+    dfactor = 0.8
+    iterations = 2
+    min_displacement = 15
+    max_displacement = 30
+    seed = 0
+    rng = None
+    smoothing = True
 
     def __init__(self, app_window):
         super().__init__(app_window)
+        self.create_mesh_choice()
         em = app_window.window.theme.font_size
         rock_settings = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
 
         rock_settings.add_child(gui.Label("Sphere Inflation Generator"))
         grid = gui.VGrid(2, 0.25 * em)
         rock_settings.add_child(grid)
+        grid.add_child(gui.Label("Base shape"))
+        grid.add_child(self._mesh_choice)
+        grid.add_child(gui.Label("Seed"))
+        self._seed_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
+        self._seed_input.set_on_value_changed(self._on_seed_change)
+        grid.add_child(self._seed_input)
+
         grid.add_child(gui.Label("Subdivision iterations"))
         self._sub_iterations_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
         self._sub_iterations_input.set_on_value_changed(self._on_iter_change)
+        self._sub_iterations_input.set_value(self.iterations)
         grid.add_child(self._sub_iterations_input)
 
         grid.add_child(gui.Label("Dampening factor"))
         self._dampening_factor = gui.Slider(gui.Slider.DOUBLE)
         self._dampening_factor.set_limits(0, 1)
         self._dampening_factor.set_on_value_changed(self._on_dfactor_change)
+        self._dampening_factor.double_value = self.dfactor
         grid.add_child(self._dampening_factor)
 
         rock_settings.add_child(gui.Label("Deformation values"))
@@ -36,13 +49,22 @@ class SphereInflationGenerator(Generator):
         self._min_def_val = gui.Slider(gui.Slider.INT)
         self._min_def_val.set_limits(-30, 100)
         self._min_def_val.set_on_value_changed(self._on_min_def_value_change)
+        self._min_def_val.double_value = self.min_displacement
         grid.add_child(self._min_def_val)
 
         grid.add_child(gui.Label("Maximum displacement"))
         self._max_def_val = gui.Slider(gui.Slider.INT)
         self._max_def_val.set_limits(0, 100)
         self._max_def_val.set_on_value_changed(self._on_max_def_value_change)
+        self._max_def_val.double_value = self.max_displacement
         grid.add_child(self._max_def_val)
+
+        grid.add_child(gui.Label('Smoothing'))
+        self._smoothing = gui.Button("Enabled")
+        self._smoothing.toggleable = True
+        self._smoothing.is_on = self.smoothing
+        self._smoothing.set_on_clicked(self._on_smoothing_change)
+        grid.add_child(self._smoothing)
 
         rock_settings.add_child(grid)
 
@@ -57,6 +79,16 @@ class SphereInflationGenerator(Generator):
     def _on_iter_change(self, number):
         self.iterations = int(number)
 
+    def _on_seed_change(self, number):
+        self.seed = int(number)
+
+    def _on_smoothing_change(self):
+        self.smoothing = self._smoothing.is_on
+        if self._smoothing.is_on:
+            self._smoothing.text = "Enabled"
+        else:
+            self._smoothing.text = "Disabled"
+
     def _on_min_def_value_change(self, number):
         self.min_displacement = int(number)
 
@@ -64,12 +96,15 @@ class SphereInflationGenerator(Generator):
         self.max_displacement = int(number)
 
     def set_operation_number(self):
-        self.max_operations_number = 2 * self.iterations + 3
+        self.max_operations_number = 2 * self.iterations + 2 + 1 * self.smoothing
 
     def generate(self):
 
+        self.rng = np.random.default_rng(self.seed)
+
         print("Create base mesh")
-        self.mesh = o3d.geometry.TriangleMesh.create_icosahedron()
+        self.create_base_mesh()
+
         self.increment_and_display_operations()
 
         print("Randomize base mesh")
@@ -89,9 +124,10 @@ class SphereInflationGenerator(Generator):
 
             dampening_factor *= self.dfactor
 
-        print("Smoothing")
-        self.mesh = self.mesh.filter_smooth_laplacian(2)
-        self.increment_and_display_operations()
+        if self.smoothing:
+            print("Smoothing")
+            self.mesh = self.mesh.filter_smooth_laplacian(2)
+            self.increment_and_display_operations()
 
     def subdivise_middle_of_triangle(self):
         vertices = np.asarray(self.mesh.vertices)
@@ -139,11 +175,11 @@ class SphereInflationGenerator(Generator):
         vertices = np.asarray(self.mesh.vertices)
         for i in range(min_max[0], min_max[1]):
             vertices[i] *= 1 + (
-                    np.random.random_integers(-self.min_displacement, self.max_displacement) / 100) * d_factor
+                    self.rng.uniform(-self.min_displacement, self.max_displacement) / 100) * d_factor
         self.mesh.vertices = o3d.utility.Vector3dVector(vertices)
 
     def randomize_mesh(self):
         vertices = np.asarray(self.mesh.vertices)
         for vertex in vertices:
-            vertex *= np.random.random_integers(75, 150) / 100
+            vertex *= self.rng.uniform(75, 150) / 100
         self.mesh.vertices = o3d.utility.Vector3dVector(vertices)
