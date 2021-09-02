@@ -185,7 +185,6 @@ class AppWindow:
     MENU_OPEN = 1
     MENU_EXPORT = 2
     MENU_QUIT = 3
-    MENU_NEW = 4
     MENU_SHOW_SETTINGS = 11
     MENU_ABOUT = 21
     MENU_SIMPLE_NOISE = 31
@@ -447,7 +446,6 @@ class AppWindow:
                 app_menu.add_item("Quit", AppWindow.MENU_QUIT)
             file_menu = gui.Menu()
             file_menu.add_item("Open...", AppWindow.MENU_OPEN)
-            file_menu.add_item("New", AppWindow.MENU_NEW)
             file_menu.add_item("Export Current Mesh...", AppWindow.MENU_EXPORT)
             if not isMacOS:
                 file_menu.add_separator()

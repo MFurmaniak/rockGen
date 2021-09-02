@@ -6,7 +6,7 @@ import open3d.visualization.gui as gui
 
 class SphereInflationGenerator(Generator):
     dfactor = 0.8
-    iterations = 2
+    iterations = 3
     min_displacement = 15
     max_displacement = 30
     seed = 0
@@ -15,7 +15,7 @@ class SphereInflationGenerator(Generator):
 
     def __init__(self, app_window):
         super().__init__(app_window)
-        self.create_mesh_choice()
+        self.create_mesh_choice(2)
         em = app_window.window.theme.font_size
         rock_settings = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
 

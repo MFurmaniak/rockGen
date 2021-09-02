@@ -50,7 +50,7 @@ class Generator(ABC):
         pass
 
 
-    def create_mesh_choice(self):
+    def create_mesh_choice(self, index = 0):
         self._mesh_choice = gui.Combobox()
         self._mesh_choice.add_item("Tetrahedron")
         self._mesh_choice.add_item("Octahedron")
@@ -58,6 +58,7 @@ class Generator(ABC):
         self._mesh_choice.add_item("Cube")
         self._mesh_choice.add_item("Box")
         self._mesh_choice.add_item("Sphere")
+        self._mesh_choice.selected_index = index
 
     def create_base_mesh(self):
         index = self._mesh_choice.selected_index
@@ -78,5 +79,6 @@ class Generator(ABC):
 
     def center_mesh(self, mesh):
         vertices = np.asarray(mesh.vertices)
-        mesh.translate(-(np.amin(vertices, axis=0) + np.amax(vertices, axis=0)) / 2)
+        # mesh.translate(-(np.amin(vertices, axis=0) + np.amax(vertices, axis=0)) / 2)
+        mesh.translate(-vertices.mean(axis=0))
 

@@ -8,9 +8,8 @@ import noise
 class SimpleNoiseGenerator(Generator):
     # Rock Settings
     seed = 0
-    mesh_radius = 1
     mesh_scale = 10
-    cuts_number = 20
+    cuts_number = 7
     number_of_iterations = 1
     low_cut = 0.6
     high_cut = 0.7
@@ -22,7 +21,7 @@ class SimpleNoiseGenerator(Generator):
 
     def __init__(self, app_window):
         super().__init__(app_window)
-        self.create_mesh_choice()
+        self.create_mesh_choice(5)
         em = app_window.window.theme.font_size
         rock_settings = gui.Vert(0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
         rock_settings.add_child((gui.Label("Simple Noise Generator")))
@@ -34,12 +33,6 @@ class SimpleNoiseGenerator(Generator):
         self._seed_input.set_value(self.seed)
         self._seed_input.set_on_value_changed(self._on_seed_change)
         grid.add_child(self._seed_input)
-
-        grid.add_child(gui.Label("Mesh radius"))
-        self._mesh_radius_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
-        self._mesh_radius_input.set_value(self.mesh_radius)
-        self._mesh_radius_input.set_on_value_changed(self._on_mesh_radius_change)
-        grid.add_child(self._mesh_radius_input)
 
         grid.add_child(gui.Label("Mesh scale"))
         self._mesh_scale_input = gui.NumberEdit(gui.NumberEdit.Type.INT)
@@ -112,9 +105,6 @@ class SimpleNoiseGenerator(Generator):
     def _on_cuts_number_change(self, number):
         self.cuts_number = int(number)
 
-    def _on_mesh_radius_change(self, number):
-        self.mesh_radius = int(number)
-
     def _on_mesh_scale_change(self, number):
         self.mesh_scale = number
 
@@ -150,6 +140,7 @@ class SimpleNoiseGenerator(Generator):
         self.increment_and_display_operations()
 
         vertices = np.asarray(self.mesh.vertices)
+        self.mesh_radius = np.max(vertices)
         if self.cuts_number > 0:
             for i in range(self.cuts_number):
                 d = rng.uniform(low=self.low_cut, high=self.high_cut) * self.mesh_radius
@@ -162,8 +153,6 @@ class SimpleNoiseGenerator(Generator):
         self.mesh.vertices = o3d.utility.Vector3dVector(vertices)
 
         self.increment_and_display_operations()
-
-        self.center_mesh(self.mesh)
 
         vertices = np.asarray(self.mesh.vertices)
 
